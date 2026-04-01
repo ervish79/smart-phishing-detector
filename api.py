@@ -16,19 +16,23 @@ vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    data = request.json
-    text = data.get("text", "")
+    try:
+        data = request.json
+        text = data.get("text", "")
 
-    text_vec = vectorizer.transform([text])
-    prediction = model.predict(text_vec)[0]
-    prob = model.predict_proba(text_vec)[0]
+        text_vec = vectorizer.transform([text])
+        prediction = model.predict(text_vec)[0]
+        prob = model.predict_proba(text_vec)[0]
 
-    phishing_prob = float(prob[1]) * 100
+        phishing_prob = float(prob[1]) * 100
 
-    return jsonify({
-        "prediction": int(prediction),
-        "phishing_prob": phishing_prob
-    })
+        return jsonify({
+            "prediction": int(prediction),
+            "phishing_prob": phishing_prob
+       })
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": str(e)})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

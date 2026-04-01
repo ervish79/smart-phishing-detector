@@ -10,9 +10,10 @@
   ],
 
   "host_permissions": [
-    "http://localhost:5000/*",
-    "<all_urls>"
-  ],
+  "https://*.onrender.com/*"
+  ]
+
+
 
   "background": {
     "service_worker": "background.js"

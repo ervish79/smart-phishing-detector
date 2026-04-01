@@ -3,11 +3,15 @@ from flask_cors import CORS   # 👈 ADD THIS
 import pickle
 
 app = Flask(__name__)
-CORS(app)  # 👈 ADD THIS (CRITICAL)
+CORS(app, supports_credentials=True)  # 👈 ADD THIS (CRITICAL)
 
 
 @app.after_request
 def after_request(response):
+    
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS'
     response.headers.add('Access-Control-Allow-Private-Network', 'true')
     return response
 # Load model
@@ -16,6 +20,8 @@ vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    if request.method =="OPTIONS":
+        return jsonify({"status": "ok"})
     try:
         data = request.json
         text = data.get("text", "")

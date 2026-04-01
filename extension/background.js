@@ -2,7 +2,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (request.action === "analyze") {
 
-        fetch("http://localhost:5000/predict", {
+        fetch("https://smart-phishing-detector-hh3z.onrender.com/predict", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

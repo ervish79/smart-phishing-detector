@@ -1,30 +1,34 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS   # 👈 ADD THIS
+from flask_cors import CORS
 import pickle
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)  # 👈 ADD THIS (CRITICAL)
 
+# ✅ VERY IMPORTANT (FULL FIX)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
-@app.after_request
-def after_request(response):
-    
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    response.headers.add('Access-Control-Allow-Private-Network', 'true')
-    return response
 # Load model
 model = pickle.load(open("model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
-@app.route("/predict", methods=["POST"])
+@app.route("/predict", methods=["POST", "OPTIONS"])
 def predict():
-    if request.method =="OPTIONS":
-        return jsonify({"status": "ok"})
+
+    # ✅ Handle preflight request properly
+    if request.method == "OPTIONS":
+        response = jsonify({"status": "ok"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response
+
     try:
         data = request.json
         text = data.get("text", "")
+
+        # ✅ LIMIT TEXT (important)
+        if len(text) > 2000:
+            text = text[:2000]
 
         text_vec = vectorizer.transform([text])
         prediction = model.predict(text_vec)[0]
@@ -32,13 +36,19 @@ def predict():
 
         phishing_prob = float(prob[1]) * 100
 
-        return jsonify({
+        response = jsonify({
             "prediction": int(prediction),
             "phishing_prob": phishing_prob
-       })
+        })
+
+        # ✅ ADD HEADERS TO ACTUAL RESPONSE TOO
+        response.headers.add("Access-Control-Allow-Origin", "*")
+
+        return response
+
     except Exception as e:
-        print("Error:", e)
+        print("ERROR:", e)
         return jsonify({"error": str(e)})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
